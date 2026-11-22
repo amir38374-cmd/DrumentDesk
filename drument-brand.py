@@ -110,6 +110,13 @@ patch(
     r"Purslane Tech Pte. Ltd.\n$license',",
     r"Purslane Tech Pte. Ltd.\n$license\nBased on open-source RustDesk (AGPL-3.0).',",
 )
+# ---------------------------------------------------------------- colors (match the Drument login page)
+COMMON = "flutter/lib/common.dart"
+patch(COMMON, "Color(0xFF0071FF)", "Color(0xFF2FB393)")   # accent
+patch(COMMON, "Color(0x770071FF)", "Color(0x772FB393)")   # accent50
+patch(COMMON, "Color(0xAA0071FF)", "Color(0xAA2FB393)")   # accent80
+patch(COMMON, "Color(0xFF2C8CFF)", "Color(0xFF2FB393)", expected=2)  # button colors
+patch(COMMON, r"primary: Colors\.blue,(\s*)secondary: accent", r"primary: accent,\1secondary: accent", expected=2, regex=True)
 # small visible strings
 patch("src/platform/windows.rs", '"RustDesk Output"', f'"{APP} Output"')
 patch("src/whiteboard/windows.rs", '"RustDesk whiteboard"', f'"{APP} whiteboard"')
