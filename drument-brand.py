@@ -117,6 +117,18 @@ patch(COMMON, "Color(0x770071FF)", "Color(0x772FB393)")   # accent50
 patch(COMMON, "Color(0xAA0071FF)", "Color(0xAA2FB393)")   # accent80
 patch(COMMON, "Color(0xFF2C8CFF)", "Color(0xFF2FB393)", expected=2)  # button colors
 patch(COMMON, r"primary: Colors\.blue,(\s*)secondary: accent", r"primary: accent,\1secondary: accent", expected=2, regex=True)
+# ---------------------------------------------------------------- design (dark navy look like the Drument site)
+patch(COMMON, "Color(0xFF18191E)", "Color(0xFF0B1220)", expected=2)   # window / dialog background
+patch(COMMON, "Color(0xFF24252B)", "Color(0xFF111A2B)", expected=5)   # cards, panels, input fields
+patch(COMMON, "Color(0xFF00B6F0)", "Color(0xFF2FB393)")               # ID color
+patch(COMMON, "BorderRadius.circular(8.0)", "BorderRadius.circular(14.0)", expected=5)
+patch(COMMON, "BorderRadius.circular(8)", "BorderRadius.circular(14)", expected=3)
+# default theme = dark (still changeable in Settings -> General)
+patch(
+    COMMON,
+    "      default:\n        return ThemeMode.system;",
+    '      case "system":\n        return ThemeMode.system;\n      default:\n        return ThemeMode.dark;',
+)
 # small visible strings
 patch("src/platform/windows.rs", '"RustDesk Output"', f'"{APP} Output"')
 patch("src/whiteboard/windows.rs", '"RustDesk whiteboard"', f'"{APP} whiteboard"')
