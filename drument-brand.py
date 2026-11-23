@@ -126,8 +126,9 @@ patch(COMMON, "BorderRadius.circular(8)", "BorderRadius.circular(14)", expected=
 # default theme = dark (still changeable in Settings -> General)
 patch(
     COMMON,
-    "      default:\n        return ThemeMode.system;",
-    '      case "system":\n        return ThemeMode.system;\n      default:\n        return ThemeMode.dark;',
+    r"default:\s*return ThemeMode\.system;",
+    'case "system":\n        return ThemeMode.system;\n      default:\n        return ThemeMode.dark;',
+    regex=True,
 )
 # small visible strings
 patch("src/platform/windows.rs", '"RustDesk Output"', f'"{APP} Output"')
