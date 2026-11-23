@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DrumentDesk branding patch.
+DruDesk branding patch.
 
 Runs inside the GitHub Actions build, right after the source is checked out.
 It changes the app name, the built-in server + key, and a few visible strings.
@@ -17,7 +17,7 @@ import pathlib
 import re
 import sys
 
-APP = "DrumentDesk"
+APP = "DruDesk"
 errors = []
 
 
@@ -128,6 +128,53 @@ patch(
     COMMON,
     r"default:\s*return ThemeMode\.system;",
     'case "system":\n        return ThemeMode.system;\n      default:\n        return ThemeMode.dark;',
+    regex=True,
+)
+# never show the "set up your own server" tip (this build already uses your server)
+patch(
+    "src/common.rs",
+    r'(pub fn using_public_server\(\) -> bool \{\s*)crate::get_custom_rendezvous_server\(get_option\("custom-rendezvous-server"\)\)\.is_empty\(\)',
+    r"\1false",
+    regex=True,
+)
+# Connect button: teal -> purple gradient pill (like the Drument login button)
+patch(
+    "flutter/lib/desktop/pages/connection_page.dart",
+    r"child: ElevatedButton\(\s*onPressed: \(\) \{\s*onConnect\(\);\s*\},\s*child: Text\(translate\(\"Connect\"\)\),\s*\),",
+    """child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                          colors: [Color(0xFF2FB393), Color(0xFF978EFB)]),
+                      borderRadius: BorderRadius.circular(14.0),
+                    ),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        foregroundColor: const Color(0xFF0B1220),
+                      ),
+                      onPressed: () {
+                        onConnect();
+                      },
+                      child: Text(translate("Connect")),
+                    ),
+                  ),""".replace("\\","\\\\"),
+    regex=True,
+)
+# Special look: soft navy -> teal glow behind the connect page
+patch(
+    "flutter/lib/desktop/pages/desktop_home_page.dart",
+    r"return Container\(\s*color: Theme\.of\(context\)\.scaffoldBackgroundColor,\s*child: ConnectionPage\(\),\s*\);",
+    """return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0B1220), Color(0xFF0E1D2B), Color(0xFF123232)],
+        ),
+      ),
+      child: ConnectionPage(),
+    );""".replace("\\","\\\\"),
     regex=True,
 )
 # small visible strings
