@@ -208,6 +208,94 @@ patch(TB, "final toolbarBorderRadius = BorderRadius.all(Radius.circular(4.0));",
 patch(TB, "static double menuBorderRadius = isWindows ? 5.0 : 7.0;", "static double menuBorderRadius = 14.0;")
 patch(TB, "static const double menuButtonBorderRadius = 3.0;", "static const double menuButtonBorderRadius = 10.0;")
 patch(TB, "static const double iconRadius = 8;", "static const double iconRadius = 12;")
+# ---- DruDesk layout pass 2: flat cards, pill tabs, rounded input, pill status
+patch(HOME, r"Container\(\s*width: 2,\s*decoration: const BoxDecoration\(color: MyTheme\.accent\),\s*\)\.marginOnly\(top: 5\),",
+      "const SizedBox(width: 4),", regex=True)
+patch(HOME, r"Container\(\s*width: 2,\s*height: 52,\s*decoration: BoxDecoration\(color: MyTheme\.accent\),?\s*\),",
+      "const SizedBox(width: 4),", regex=True)
+PT = "flutter/lib/common/widgets/peer_tab_page.dart"
+patch(PT, r"final decoBorder = BoxDecoration\(\s*border: Border\(\s*bottom: BorderSide\(width: 2, color: color!\),\s*\)\);",
+      "final decoBorder = BoxDecoration(color: const Color(0xFF133A3A), borderRadius: BorderRadius.circular(12.0));", regex=True)
+patch(PT, r"borderRadius: BorderRadius\.circular\(6\)\);\s*final decoBorder", "borderRadius: BorderRadius.circular(12.0));\n          final decoBorder", regex=True)
+patch(PT, r"child: Icon\(model\.tabIcon\(t\), color: color\)\s*\.paddingSymmetric\(horizontal: 4\),",
+      "child: Icon(model.tabIcon(t), color: color)\n                            .paddingSymmetric(horizontal: 10, vertical: 7),", regex=True)
+CP = "flutter/lib/desktop/pages/connection_page.dart"
+patch(CP, r"Divider\(\)\.paddingOnly\(right: 12\),", "const SizedBox(height: 4),", regex=True)
+patch(CP, r"if \(!isOutgoingOnly\) const Divider\(height: 1\),\s*if \(!isOutgoingOnly\) OnlineStatusWidget\(\)",
+      """if (!isOutgoingOnly)
+          Container(
+            margin: const EdgeInsets.fromLTRB(12, 6, 12, 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF0F2A2A),
+              borderRadius: BorderRadius.circular(16.0),
+            ),
+            child: OnlineStatusWidget(),
+          )""", regex=True)
+patch(CP, r"decoration: InputDecoration\(\s*filled: false,\s*counterText: '',",
+      """decoration: InputDecoration(
+                              filled: true,
+                              fillColor: const Color(0xFF111A2B),
+                              enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14.0),
+                                  borderSide: const BorderSide(color: Color(0xFF1F2D47), width: 1.5)),
+                              focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(14.0),
+                                  borderSide: const BorderSide(color: Color(0xFF2FB393), width: 1.5)),
+                              counterText: '',""", regex=True)
+# ---- DruDesk tile menu under ID + password (square boxes like Drument)
+TILES = """Widget buildTileGrid(BuildContext context) {
+    final items = <List<dynamic>>[
+      [Icons.tune_rounded, 'General', SettingsTabKey.general],
+      [Icons.shield_outlined, 'Security', SettingsTabKey.safety],
+      [Icons.lan_outlined, 'Network', SettingsTabKey.network],
+      [Icons.desktop_windows_outlined, 'Display', SettingsTabKey.display],
+      [Icons.person_outline_rounded, 'Account', SettingsTabKey.account],
+      [Icons.info_outline_rounded, 'About', SettingsTabKey.about],
+    ];
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 12, 12),
+      child: GridView.count(
+        crossAxisCount: 3,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
+        childAspectRatio: 1.0,
+        children: items
+            .map((it) => InkWell(
+                  borderRadius: BorderRadius.circular(14.0),
+                  onTap: () => DesktopTabPage.onAddSetting(
+                      initialPage: it[2] as SettingsTabKey),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF111A2B),
+                      borderRadius: BorderRadius.circular(14.0),
+                      border: Border.all(color: const Color(0xFF1F2D47)),
+                    ),
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(it[0] as IconData,
+                            color: const Color(0xFF2FB393), size: 26),
+                        const SizedBox(height: 6),
+                        Text(translate(it[1] as String),
+                            style: const TextStyle(fontSize: 11),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
+                ))
+            .toList(),
+      ),
+    );
+  }
+
+  Widget buildPopupMenu(BuildContext context) {"""
+patch(HOME, "Widget buildPopupMenu(BuildContext context) {", TILES)
+patch(HOME, "if (!isOutgoingOnly) buildPasswordBoard(context),",
+      "if (!isOutgoingOnly) buildPasswordBoard(context),\n      if (!isOutgoingOnly) buildTileGrid(context),")
+patch(HOME, "width: isIncomingOnly ? 280.0 : 200.0,", "width: 270.0,")
 # small visible strings
 patch("src/platform/windows.rs", '"RustDesk Output"', f'"{APP} Output"')
 patch("src/whiteboard/windows.rs", '"RustDesk whiteboard"', f'"{APP} whiteboard"')
