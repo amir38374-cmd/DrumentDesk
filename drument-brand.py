@@ -143,8 +143,8 @@ patch(
     r"child: ElevatedButton\(\s*onPressed: \(\) \{\s*onConnect\(\);\s*\},\s*child: Text\(translate\(\"Connect\"\)\),\s*\),",
     """child: DecoratedBox(
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                          colors: [Color(0xFF2FB393), Color(0xFF978EFB)]),
+                      gradient: LinearGradient(
+                          colors: [MyTheme.accent, const Color(0xFF978EFB)]),
                       borderRadius: BorderRadius.circular(14.0),
                     ),
                     child: ElevatedButton(
@@ -200,7 +200,7 @@ patch(COMMON, r"return SwitchThemeData\(\s*splashRadius: \(isDesktop \|\| isWebD
         thumbColor: MaterialStateProperty.resolveWith((s) =>
             s.contains(MaterialState.selected) ? Colors.white : const Color(0xFF8A99B5)),
         trackColor: MaterialStateProperty.resolveWith((s) =>
-            s.contains(MaterialState.selected) ? const Color(0xFF2FB393) : const Color(0xFF243453)),
+            s.contains(MaterialState.selected) ? MyTheme.accent : const Color(0xFF243453)),
         splashRadius: (isDesktop || isWebDesktop) ? 0 : kRadialReactionRadius);""", regex=True)
 # remote toolbar: pill shape
 TB = "flutter/lib/desktop/widgets/remote_toolbar.dart"
@@ -240,53 +240,84 @@ patch(CP, r"decoration: InputDecoration\(\s*filled: false,\s*counterText: '',",
                                   borderSide: const BorderSide(color: Color(0xFF1F2D47), width: 1.5)),
                               focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14.0),
-                                  borderSide: const BorderSide(color: Color(0xFF2FB393), width: 1.5)),
+                                  borderSide: BorderSide(color: MyTheme.accent, width: 1.5)),
                               counterText: '',""", regex=True)
-# ---- DruDesk tile menu under ID + password (square boxes like Drument)
+# ---- DruDesk tiles: ONE Settings tile + Recent/Favorites/... as square boxes under ID+password
 TILES = """Widget buildTileGrid(BuildContext context) {
-    final items = <List<dynamic>>[
-      [Icons.tune_rounded, 'General', SettingsTabKey.general],
-      [Icons.shield_outlined, 'Security', SettingsTabKey.safety],
-      [Icons.lan_outlined, 'Network', SettingsTabKey.network],
-      [Icons.desktop_windows_outlined, 'Display', SettingsTabKey.display],
-      [Icons.person_outline_rounded, 'Account', SettingsTabKey.account],
-      [Icons.info_outline_rounded, 'About', SettingsTabKey.about],
-    ];
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 12, 12),
-      child: GridView.count(
-        crossAxisCount: 3,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-        childAspectRatio: 1.0,
-        children: items
-            .map((it) => InkWell(
-                  borderRadius: BorderRadius.circular(14.0),
-                  onTap: () => DesktopTabPage.onAddSetting(
-                      initialPage: it[2] as SettingsTabKey),
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF111A2B),
-                      borderRadius: BorderRadius.circular(14.0),
-                      border: Border.all(color: const Color(0xFF1F2D47)),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(it[0] as IconData,
-                            color: const Color(0xFF2FB393), size: 26),
-                        const SizedBox(height: 6),
-                        Text(translate(it[1] as String),
-                            style: const TextStyle(fontSize: 11),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
-                      ],
-                    ),
-                  ),
-                ))
-            .toList(),
+    return ChangeNotifierProvider.value(
+      value: gFFI.peerTabModel,
+      child: Consumer<PeerTabModel>(builder: (context, model, child) {
+        final tiles = <Widget>[
+          ...model.visibleEnabledOrderedIndexs.map((t) => buildTile(
+                context,
+                PeerTabModel.icons[t],
+                PeerTabModel.tabNames[t],
+                model.currentTab == t,
+                () async {
+                  if (t != model.currentTab) {
+                    model.setCurrentTabCachedPeers([]);
+                  }
+                  model.setCurrentTab(t);
+                  if (t == 3) {
+                    gFFI.abModel.pullAb(
+                        force: ForcePullAb.listAndCurrent, quiet: false);
+                  }
+                  if (t == 4) {
+                    gFFI.groupModel.pull(force: true);
+                  }
+                  await bind.setLocalFlutterOption(
+                      k: kOptionPeerTabIndex, v: t.toString());
+                },
+              )),
+          buildTile(context, Icons.settings_rounded, 'Settings', false,
+              () => DesktopTabPage.onAddSetting()),
+        ];
+        return Container(
+          margin: const EdgeInsets.fromLTRB(16, 0, 12, 12),
+          child: GridView.count(
+            crossAxisCount: 3,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 8,
+            crossAxisSpacing: 8,
+            childAspectRatio: 1.0,
+            children: tiles,
+          ),
+        );
+      }),
+    );
+  }
+
+  Widget buildTile(BuildContext context, IconData icon, String label,
+      bool selected, VoidCallback onTap) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(14.0),
+      onTap: onTap,
+      child: Container(
+        decoration: BoxDecoration(
+          color: selected
+              ? MyTheme.accent.withOpacity(0.18)
+              : const Color(0xFF111A2B),
+          borderRadius: BorderRadius.circular(14.0),
+          border: Border.all(
+              color: selected ? MyTheme.accent : const Color(0xFF1F2D47),
+              width: selected ? 1.5 : 1.0),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, color: MyTheme.accent, size: 26),
+            const SizedBox(height: 6),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(translate(label),
+                  style: const TextStyle(fontSize: 11),
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -296,6 +327,90 @@ patch(HOME, "Widget buildPopupMenu(BuildContext context) {", TILES)
 patch(HOME, "if (!isOutgoingOnly) buildPasswordBoard(context),",
       "if (!isOutgoingOnly) buildPasswordBoard(context),\n      if (!isOutgoingOnly) buildTileGrid(context),")
 patch(HOME, "width: isIncomingOnly ? 280.0 : 200.0,", "width: 270.0,")
+patch(HOME, "import 'package:flutter_hbb/models/platform_model.dart';",
+      "import 'package:flutter_hbb/models/platform_model.dart';\nimport 'package:flutter_hbb/models/peer_tab_model.dart';\nimport 'package:flutter_hbb/models/ab_model.dart';")
+# no second Settings: remove the dots button beside ID and the menu icon in the title bar
+patch(HOME, "buildPopupMenu(context)", "const SizedBox.shrink()")
+patch("flutter/lib/desktop/pages/desktop_tab_page.dart", "offstage: bind.isIncomingOnly() || bind.isDisableSettings(),", "offstage: true,")
+# the old tab strip on the right is replaced by the tiles
+patch("flutter/lib/common/widgets/peer_tab_page.dart",
+      r"Expanded\(\s*child: visibleContextMenuListener\(\s*_createSwitchBar\(context\)\)\),",
+      "const Expanded(child: SizedBox()),", regex=True)
+
+# ---- accent color picker (saved, applies after restart)
+patch(COMMON, "static const Color accent = Color(0xFF2FB393);",
+"""static const Color accentDefault = Color(0xFF2FB393);
+  static const List<int> accentChoices = [
+    0xFF2FB393, 0xFFA5D86B, 0xFF978EFB, 0xFF5BA8F5, 0xFFF59E5B,
+    0xFFF26B8A, 0xFFF5D04C, 0xFF4FD1C5, 0xFFE5534B, 0xFF7ED957,
+    0xFFB084F5, 0xFF38BDF8, 0xFFFB7185, 0xFFFBBF24, 0xFF94A3B8,
+  ];
+  static Color loadAccent() {
+    try {
+      final v = bind.mainGetLocalOption(key: 'drudesk-accent');
+      if (v.isNotEmpty) return Color(int.parse(v));
+    } catch (_) {}
+    return accentDefault;
+  }
+  static Color accent = loadAccent();""")
+patch(COMMON, "static const Color accent50 = Color(0x772FB393);", "static Color accent50 = accent.withOpacity(0.47);")
+patch(COMMON, "static const Color accent80 = Color(0xAA2FB393);", "static Color accent80 = accent.withOpacity(0.67);")
+patch(COMMON, r"style: const TextStyle\(\s*color: MyTheme\.accent\)", "style: const TextStyle(color: MyTheme.accentDefault)", regex=True)
+patch(COMMON, r"labelLarge: TextStyle\(fontSize: 16\.0, color: MyTheme\.accent80\)\)", "labelLarge: TextStyle(fontSize: 16.0, color: Color(0xAA2FB393)))", regex=True)
+patch(COMMON, r"color: accent80,(\s*)\),(\s*)\),(\s*)cardColor: Color\(0xFF111A2B\)",
+      r"color: Color(0xAA2FB393),\1),\2),\3cardColor: Color(0xFF111A2B)", regex=True)
+patch("flutter/lib/desktop/pages/desktop_setting_page.dart", "const Color _accentColor = MyTheme.accent;", "const Color _accentColor = MyTheme.accentDefault;")
+patch("flutter/lib/desktop/widgets/remote_toolbar.dart", "static const Color hoverBlueColor = MyTheme.accent;", "static const Color hoverBlueColor = MyTheme.accentDefault;")
+patch("flutter/lib/desktop/widgets/popup_menu.dart", "static const Color commonColor = MyTheme.accent;", "static const Color commonColor = MyTheme.accentDefault;")
+patch("flutter/lib/desktop/widgets/tabbar_widget.dart", "selectedTabIconColor: MyTheme.accent,", "selectedTabIconColor: MyTheme.accentDefault,", expected=2)
+patch("flutter/lib/common/widgets/peer_tab_page.dart", "commonColor: MyTheme.accent,", "commonColor: MyTheme.accentDefault,")
+SET = "flutter/lib/desktop/pages/desktop_setting_page.dart"
+patch(SET, r"label: 'Follow System',(\s*)onChanged: isOptFixed \? null : onChanged\),(\s*)\]\);",
+      r"label: 'Follow System',\1onChanged: isOptFixed ? null : onChanged),\2  _accentPicker(),\2]);", regex=True)
+patch(SET, "Widget theme() {", """Widget _accentPicker() {
+    final saved = bind.mainGetLocalOption(key: 'drudesk-accent');
+    final sel = saved.isEmpty ? MyTheme.accentChoices.first.toString() : saved;
+    return Padding(
+      padding: const EdgeInsets.only(top: 14, bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(translate('Accent color')),
+          const SizedBox(height: 10),
+          Wrap(
+            spacing: 10,
+            runSpacing: 10,
+            children: MyTheme.accentChoices
+                .map((c) => InkWell(
+                      borderRadius: BorderRadius.circular(18.0),
+                      onTap: () async {
+                        await bind.mainSetLocalOption(
+                            key: 'drudesk-accent', value: c.toString());
+                        showToast(translate('Restart DruDesk to apply the color'));
+                        setState(() {});
+                      },
+                      child: Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: Color(c),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: sel == c.toString()
+                                  ? Colors.white
+                                  : Colors.transparent,
+                              width: 2.5),
+                        ),
+                      ),
+                    ))
+                .toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget theme() {""")
 # small visible strings
 patch("src/platform/windows.rs", '"RustDesk Output"', f'"{APP} Output"')
 patch("src/whiteboard/windows.rs", '"RustDesk whiteboard"', f'"{APP} whiteboard"')
