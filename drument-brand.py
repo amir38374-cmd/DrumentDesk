@@ -177,6 +177,37 @@ patch(
     );""".replace("\\","\\\\"),
     regex=True,
 )
+# ---- DruDesk full look: cards, menus, switches, toolbar
+CARD = "BoxDecoration(color: const Color(0xFF111A2B), borderRadius: BorderRadius.circular(14.0), border: Border.all(color: const Color(0xFF1F2D47)))"
+HOME = "flutter/lib/desktop/pages/desktop_home_page.dart"
+# ID card
+patch(HOME, r"margin: const EdgeInsets\.only\(left: 20, right: 11\),(\s*)height: 57,",
+      r"margin: const EdgeInsets.only(left: 16, right: 12, top: 4),\1padding: const EdgeInsets.only(left: 10, right: 6),\1decoration: " + CARD + r",\1height: 62,", regex=True)
+# password card
+patch(HOME, r"margin: EdgeInsets\.only\(left: 20\.0, right: 16, top: 13, bottom: 13\),",
+      "margin: const EdgeInsets.only(left: 16, right: 12, top: 8, bottom: 13),\n      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),\n      decoration: " + CARD + ",", regex=True)
+# popup menus: rounded card
+patch(COMMON, r"popupMenuTheme: PopupMenuThemeData\(\s*shape: RoundedRectangleBorder\(\s*side: BorderSide\(color: Colors\.white24\),\s*borderRadius: BorderRadius\.all\(Radius\.circular\(8\.0\)\),\s*\)\),",
+      """popupMenuTheme: PopupMenuThemeData(
+        color: const Color(0xFF111A2B),
+        shape: RoundedRectangleBorder(
+      side: const BorderSide(color: Color(0xFF1F2D47)),
+      borderRadius: BorderRadius.all(Radius.circular(14.0)),
+    )),""", regex=True)
+# switches: teal when on
+patch(COMMON, r"return SwitchThemeData\(\s*splashRadius: \(isDesktop \|\| isWebDesktop\) \? 0 : kRadialReactionRadius\);",
+      """return SwitchThemeData(
+        thumbColor: MaterialStateProperty.resolveWith((s) =>
+            s.contains(MaterialState.selected) ? Colors.white : const Color(0xFF8A99B5)),
+        trackColor: MaterialStateProperty.resolveWith((s) =>
+            s.contains(MaterialState.selected) ? const Color(0xFF2FB393) : const Color(0xFF243453)),
+        splashRadius: (isDesktop || isWebDesktop) ? 0 : kRadialReactionRadius);""", regex=True)
+# remote toolbar: pill shape
+TB = "flutter/lib/desktop/widgets/remote_toolbar.dart"
+patch(TB, "final toolbarBorderRadius = BorderRadius.all(Radius.circular(4.0));", "final toolbarBorderRadius = BorderRadius.all(Radius.circular(18.0));")
+patch(TB, "static double menuBorderRadius = isWindows ? 5.0 : 7.0;", "static double menuBorderRadius = 14.0;")
+patch(TB, "static const double menuButtonBorderRadius = 3.0;", "static const double menuButtonBorderRadius = 10.0;")
+patch(TB, "static const double iconRadius = 8;", "static const double iconRadius = 12;")
 # small visible strings
 patch("src/platform/windows.rs", '"RustDesk Output"', f'"{APP} Output"')
 patch("src/whiteboard/windows.rs", '"RustDesk whiteboard"', f'"{APP} whiteboard"')
