@@ -416,6 +416,16 @@ patch("src/platform/windows.rs", '"RustDesk Output"', f'"{APP} Output"')
 patch("src/whiteboard/windows.rs", '"RustDesk whiteboard"', f'"{APP} whiteboard"')
 patch("src/auth_2fa.rs", 'const ISSUER: &str = "RustDesk";', f'const ISSUER: &str = "{APP}";')
 
+# ---- Android: own app id (so it installs next to the stock RustDesk), name, icon background
+AND = "flutter/android/app/"
+patch(AND + "build.gradle", 'applicationId "com.carriez.flutter_hbb"', 'applicationId "com.drument.drudesk"')
+patch(AND + "src/main/AndroidManifest.xml", 'android:label="RustDesk"', 'android:label="' + APP + '"')
+patch(AND + "src/main/AndroidManifest.xml", 'android:label="RustDesk Input"', 'android:label="' + APP + ' Input"')
+patch(AND + "src/main/res/values/strings.xml", '<string name="app_name">RustDesk</string>', '<string name="app_name">' + APP + '</string>')
+patch(AND + "src/main/res/values/ic_launcher_background.xml", "#ffffff", "#0B1220")
+patch(AND + "src/main/kotlin/com/carriez/flutter_hbb/MainService.kt", 'const val DEFAULT_NOTIFY_TITLE = "RustDesk"', 'const val DEFAULT_NOTIFY_TITLE = "' + APP + '"')
+patch(AND + "src/main/kotlin/com/carriez/flutter_hbb/BootReceiver.kt", '"RustDesk is Open"', '"' + APP + ' is Open"')
+
 if errors:
     print("\nBRANDING FAILED:", file=sys.stderr)
     for e in errors:
