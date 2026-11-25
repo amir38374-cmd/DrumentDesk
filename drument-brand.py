@@ -426,6 +426,158 @@ patch(AND + "src/main/res/values/ic_launcher_background.xml", "#ffffff", "#0B122
 patch(AND + "src/main/kotlin/com/carriez/flutter_hbb/MainService.kt", 'const val DEFAULT_NOTIFY_TITLE = "RustDesk"', 'const val DEFAULT_NOTIFY_TITLE = "' + APP + '"')
 patch(AND + "src/main/kotlin/com/carriez/flutter_hbb/BootReceiver.kt", '"RustDesk is Open"', '"' + APP + ' is Open"')
 
+# ---- Android / phone UI: same look as the desktop (ID card, square tiles, navy bars)
+MCP = "flutter/lib/mobile/pages/connection_page.dart"
+MHP = "flutter/lib/mobile/pages/home_page.dart"
+patch(MCP, r"borderRadius: BorderRadius\.all\(Radius\.circular\(13\)\),",
+      "borderRadius: BorderRadius.all(Radius.circular(14)),\n            border: Border.all(color: const Color(0xFF1F2D47)),", regex=True)
+patch(MCP, "import 'home_page.dart';",
+      "import 'home_page.dart';\nimport '../../models/peer_tab_model.dart';\nimport '../../models/ab_model.dart';")
+patch(MCP, r"_buildRemoteIDTextField\(\),(\s*)\]\)\),", r"_buildRemoteIDTextField(),\1_buildTileGrid(),\1])),", regex=True)
+patch(MCP, "/// Callback for the connect button.", """Widget _buildTileGrid() {
+    return ChangeNotifierProvider.value(
+      value: gFFI.peerTabModel,
+      child: Consumer<PeerTabModel>(builder: (context, model, child) {
+        return Container(
+          margin: const EdgeInsets.fromLTRB(2, 4, 2, 8),
+          padding: const EdgeInsets.all(4),
+          decoration: BoxDecoration(
+            color: const Color(0xFF0A101C),
+            borderRadius: BorderRadius.circular(16.0),
+            border: Border.all(color: const Color(0xFF1F2D47)),
+          ),
+          child: Row(
+            children: model.visibleEnabledOrderedIndexs.map((t) {
+              final selected = model.currentTab == t;
+              return Expanded(
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12.0),
+                  onTap: () async {
+                    if (t != model.currentTab) {
+                      model.setCurrentTabCachedPeers([]);
+                    }
+                    model.setCurrentTab(t);
+                    if (t == 3) {
+                      gFFI.abModel.pullAb(
+                          force: ForcePullAb.listAndCurrent, quiet: false);
+                    }
+                    if (t == 4) {
+                      gFFI.groupModel.pull(force: true);
+                    }
+                    await bind.setLocalFlutterOption(
+                        k: kOptionPeerTabIndex, v: t.toString());
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      gradient: selected
+                          ? LinearGradient(colors: [
+                              MyTheme.accent,
+                              const Color(0xFF978EFB)
+                            ])
+                          : null,
+                      borderRadius: BorderRadius.circular(12.0),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(PeerTabModel.icons[t],
+                            size: 20,
+                            color: selected
+                                ? const Color(0xFF0B1220)
+                                : MyTheme.accent),
+                        const SizedBox(height: 3),
+                        Text(translate(PeerTabModel.tabNames[t]),
+                            style: TextStyle(
+                                fontSize: 9,
+                                color: selected
+                                    ? const Color(0xFF0B1220)
+                                    : null),
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        );
+      }),
+    );
+  }
+
+  /// Callback for the connect button.""")
+patch(MCP, r"SizedBox\(\s*width: 60,\s*height: 60,\s*child: IconButton\(\s*icon: const Icon\(Icons\.arrow_forward,\s*color: MyTheme\.darkGray, size: 45\),\s*onPressed: onConnect,\s*\),\s*\),",
+      """Padding(
+                padding: const EdgeInsets.only(right: 10),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14.0),
+                  onTap: onConnect,
+                  child: Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                          colors: [MyTheme.accent, const Color(0xFF978EFB)]),
+                      borderRadius: BorderRadius.circular(14.0),
+                    ),
+                    child: const Icon(Icons.arrow_forward,
+                        color: Color(0xFF0B1220), size: 26),
+                  ),
+                ),
+              ),""", regex=True)
+# remote-control screen: floating rounded bar in the theme color
+MRP = "flutter/lib/mobile/pages/remote_page.dart"
+patch(MRP, r"return BottomAppBar\(\s*elevation: 10,\s*color: MyTheme\.accent,",
+      """return Padding(
+      padding: const EdgeInsets.fromLTRB(14, 0, 14, 10),
+      child: ClipRRect(
+      borderRadius: BorderRadius.circular(22.0),
+      child: BottomAppBar(
+      elevation: 0,
+      color: MyTheme.accent,""", regex=True)
+patch(MRP, r"\],(\s*)\),(\s*)\);(\s*)\}(\s*)bool get showCursorPaint", r"],\1),\2)));\3}\4bool get showCursorPaint", regex=True)
+patch(MHP, "type: BottomNavigationBarType.fixed,", "type: BottomNavigationBarType.fixed,\n            backgroundColor: Colors.transparent,\n            elevation: 0,")
+patch(MHP, r"centerTitle: true,(\s*)title: appTitle\(\),", r"centerTitle: true,\1backgroundColor: Colors.transparent,\1elevation: 0,\1title: appTitle(),", regex=True)
+
+patch(MHP, r"child: Scaffold\(\s*// backgroundColor: MyTheme\.grayBg,\s*appBar: AppBar\(",
+      """child: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF0B1220), Color(0xFF0E1D2B), Color(0xFF123232)],
+            ),
+          ),
+          child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(""", regex=True)
+patch(MHP, r"body: _pages\.elementAt\(_selectedIndex\),(\s*)\)\);", r"body: _pages.elementAt(_selectedIndex),\1)));", regex=True)
+patch(MHP, "return Text(bind.mainGetAppNameSync());", "return Image.asset('assets/logo.png', height: 30);")
+
+patch(MHP, "bottomNavigationBar: BottomNavigationBar(",
+      """bottomNavigationBar: Container(
+            margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111A2B),
+              borderRadius: BorderRadius.circular(22.0),
+              border: Border.all(color: const Color(0xFF1F2D47)),
+            ),
+            child: ClipRRect(
+            borderRadius: BorderRadius.circular(22.0),
+            child: BottomNavigationBar(""")
+patch(MHP, r"\}\),(\s*)\),(\s*)body: _pages\.elementAt", r"}),\1))),\2body: _pages.elementAt", regex=True)
+
+# incoming-connection window (PC): card follows the theme color
+patch("flutter/lib/desktop/pages/server_page.dart",
+      r"Color\(0xff00bfe1\),(\s*)Color\(0xff0071ff\),",
+      r"MyTheme.accent,\1const Color(0xFF978EFB),", regex=True)
+patch("flutter/lib/desktop/pages/server_page.dart",
+      r"borderRadius: BorderRadius\.circular\(10\.0\),(\s*)gradient: LinearGradient\(",
+      r"borderRadius: BorderRadius.circular(16.0),\1gradient: LinearGradient(", regex=True)
+
 if errors:
     print("\nBRANDING FAILED:", file=sys.stderr)
     for e in errors:
