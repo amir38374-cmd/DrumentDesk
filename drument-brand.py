@@ -166,11 +166,11 @@ patch(
     "flutter/lib/desktop/pages/desktop_home_page.dart",
     r"return Container\(\s*color: Theme\.of\(context\)\.scaffoldBackgroundColor,\s*child: ConnectionPage\(\),\s*\);",
     """return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0B1220), Color(0xFF0E1D2B), Color(0xFF123232)],
+          colors: MyTheme.dcGradient,
         ),
       ),
       child: ConnectionPage(),
@@ -178,7 +178,7 @@ patch(
     regex=True,
 )
 # ---- DruDesk full look: cards, menus, switches, toolbar
-CARD = "BoxDecoration(color: const Color(0xFF111A2B), borderRadius: BorderRadius.circular(14.0), border: Border.all(color: const Color(0xFF1F2D47)))"
+CARD = "BoxDecoration(color: MyTheme.dcCard, borderRadius: BorderRadius.circular(14.0), border: Border.all(color: MyTheme.dcLine))"
 HOME = "flutter/lib/desktop/pages/desktop_home_page.dart"
 # ID card
 patch(HOME, r"margin: const EdgeInsets\.only\(left: 20, right: 11\),(\s*)height: 57,",
@@ -226,7 +226,7 @@ patch(CP, r"if \(!isOutgoingOnly\) const Divider\(height: 1\),\s*if \(!isOutgoin
           Container(
             margin: const EdgeInsets.fromLTRB(12, 6, 12, 12),
             decoration: BoxDecoration(
-              color: const Color(0xFF0F2A2A),
+              color: MyTheme.dcStatus,
               borderRadius: BorderRadius.circular(16.0),
             ),
             child: OnlineStatusWidget(),
@@ -234,10 +234,10 @@ patch(CP, r"if \(!isOutgoingOnly\) const Divider\(height: 1\),\s*if \(!isOutgoin
 patch(CP, r"decoration: InputDecoration\(\s*filled: false,\s*counterText: '',",
       """decoration: InputDecoration(
                               filled: true,
-                              fillColor: const Color(0xFF111A2B),
+                              fillColor: MyTheme.dcCard,
                               enabledBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14.0),
-                                  borderSide: const BorderSide(color: Color(0xFF1F2D47), width: 1.5)),
+                                  borderSide: BorderSide(color: MyTheme.dcLine, width: 1.5)),
                               focusedBorder: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(14.0),
                                   borderSide: BorderSide(color: MyTheme.accent, width: 1.5)),
@@ -297,10 +297,10 @@ TILES = """Widget buildTileGrid(BuildContext context) {
         decoration: BoxDecoration(
           color: selected
               ? MyTheme.accent.withOpacity(0.18)
-              : const Color(0xFF111A2B),
+              : MyTheme.dcCard,
           borderRadius: BorderRadius.circular(14.0),
           border: Border.all(
-              color: selected ? MyTheme.accent : const Color(0xFF1F2D47),
+              color: selected ? MyTheme.accent : MyTheme.dcLine,
               width: selected ? 1.5 : 1.0),
         ),
         child: Column(
@@ -352,7 +352,24 @@ patch(COMMON, "static const Color accent = Color(0xFF2FB393);",
     } catch (_) {}
     return accentDefault;
   }
-  static Color accent = loadAccent();""")
+  static Color accent = loadAccent();
+  static bool get dcDark {
+    final m = currentThemeMode();
+    return m == ThemeMode.dark ||
+        (m == ThemeMode.system &&
+            WidgetsBinding.instance.platformDispatcher.platformBrightness ==
+                Brightness.dark);
+  }
+  static Color get dcCard => dcDark ? const Color(0xFF111A2B) : Colors.white;
+  static Color get dcLine =>
+      dcDark ? const Color(0xFF1F2D47) : const Color(0xFFD5DFEA);
+  static Color get dcSeg =>
+      dcDark ? const Color(0xFF0A101C) : const Color(0xFFE4ECF3);
+  static Color get dcStatus =>
+      dcDark ? const Color(0xFF0F2A2A) : const Color(0xFFD9F1EA);
+  static List<Color> get dcGradient => dcDark
+      ? const [Color(0xFF0B1220), Color(0xFF0E1D2B), Color(0xFF123232)]
+      : const [Color(0xFFF4F8FB), Color(0xFFE9F4F1), Color(0xFFDCF0E9)];""")
 patch(COMMON, "static const Color accent50 = Color(0x772FB393);", "static Color accent50 = accent.withOpacity(0.47);")
 patch(COMMON, "static const Color accent80 = Color(0xAA2FB393);", "static Color accent80 = accent.withOpacity(0.67);")
 patch(COMMON, r"style: const TextStyle\(\s*color: MyTheme\.accent\)", "style: const TextStyle(color: MyTheme.accentDefault)", regex=True)
@@ -430,7 +447,7 @@ patch(AND + "src/main/kotlin/com/carriez/flutter_hbb/BootReceiver.kt", '"RustDes
 MCP = "flutter/lib/mobile/pages/connection_page.dart"
 MHP = "flutter/lib/mobile/pages/home_page.dart"
 patch(MCP, r"borderRadius: BorderRadius\.all\(Radius\.circular\(13\)\),",
-      "borderRadius: BorderRadius.all(Radius.circular(14)),\n            border: Border.all(color: const Color(0xFF1F2D47)),", regex=True)
+      "borderRadius: BorderRadius.all(Radius.circular(14)),\n            border: Border.all(color: MyTheme.dcLine),", regex=True)
 patch(MCP, "import 'home_page.dart';",
       "import 'home_page.dart';\nimport '../../models/peer_tab_model.dart';\nimport '../../models/ab_model.dart';")
 patch(MCP, r"_buildRemoteIDTextField\(\),(\s*)\]\)\),", r"_buildRemoteIDTextField(),\1_buildTileGrid(),\1])),", regex=True)
@@ -442,9 +459,9 @@ patch(MCP, "/// Callback for the connect button.", """Widget _buildTileGrid() {
           margin: const EdgeInsets.fromLTRB(2, 4, 2, 8),
           padding: const EdgeInsets.all(4),
           decoration: BoxDecoration(
-            color: const Color(0xFF0A101C),
+            color: MyTheme.dcSeg,
             borderRadius: BorderRadius.circular(16.0),
-            border: Border.all(color: const Color(0xFF1F2D47)),
+            border: Border.all(color: MyTheme.dcLine),
           ),
           child: Row(
             children: model.visibleEnabledOrderedIndexs.map((t) {
@@ -544,11 +561,11 @@ patch(MHP, r"centerTitle: true,(\s*)title: appTitle\(\),", r"centerTitle: true,\
 
 patch(MHP, r"child: Scaffold\(\s*// backgroundColor: MyTheme\.grayBg,\s*appBar: AppBar\(",
       """child: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Color(0xFF0B1220), Color(0xFF0E1D2B), Color(0xFF123232)],
+              colors: MyTheme.dcGradient,
             ),
           ),
           child: Scaffold(
@@ -561,9 +578,9 @@ patch(MHP, "bottomNavigationBar: BottomNavigationBar(",
       """bottomNavigationBar: Container(
             margin: const EdgeInsets.fromLTRB(12, 0, 12, 10),
             decoration: BoxDecoration(
-              color: const Color(0xFF111A2B),
+              color: MyTheme.dcCard,
               borderRadius: BorderRadius.circular(22.0),
-              border: Border.all(color: const Color(0xFF1F2D47)),
+              border: Border.all(color: MyTheme.dcLine),
             ),
             child: ClipRRect(
             borderRadius: BorderRadius.circular(22.0),
@@ -578,6 +595,54 @@ patch("flutter/lib/desktop/pages/server_page.dart",
       r"borderRadius: BorderRadius\.circular\(10\.0\),(\s*)gradient: LinearGradient\(",
       r"borderRadius: BorderRadius.circular(16.0),\1gradient: LinearGradient(", regex=True)
 
+# default view: fit the remote screen to the window (no scrolling when the mouse moves)
+patch("flutter/lib/main.dart", r"_registerEventHandler\(\);(\s*)// Update the system theme\.",
+      """_registerEventHandler();
+  try {
+    if (bind.mainGetUserDefaultOption(key: kOptionViewStyle).isEmpty) {
+      await bind.mainSetUserDefaultOption(key: kOptionViewStyle, value: 'adaptive');
+    }
+    if (bind.mainGetUserDefaultOption(key: kOptionScrollStyle).isEmpty) {
+      await bind.mainSetUserDefaultOption(key: kOptionScrollStyle, value: 'scrollbar');
+    }
+  } catch (_) {}
+  // Update the system theme.""", regex=True)
+# phone: accent color in Settings -> Theme, and no RustDesk account login
+MSP = "flutter/lib/mobile/pages/settings_page.dart"
+patch(MSP, r"ThemeMode\.system, themeMode,(\s*)isOptFixed \? null : setTheme\)(\s*)\]\),",
+      """ThemeMode.system, themeMode,
+            isOptFixed ? null : setTheme),
+        const SizedBox(height: 14),
+        Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          children: MyTheme.accentChoices
+              .map((c) => InkWell(
+                    borderRadius: BorderRadius.circular(18.0),
+                    onTap: () async {
+                      await bind.mainSetLocalOption(
+                          key: 'drudesk-accent', value: c.toString());
+                      showToast(translate('Restart DruDesk to apply the color'));
+                      close();
+                    },
+                    child: Container(
+                      width: 32,
+                      height: 32,
+                      decoration: BoxDecoration(
+                        color: Color(c),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color: MyTheme.accent.value == c
+                                ? Colors.white
+                                : Colors.transparent,
+                            width: 2.5),
+                      ),
+                    ),
+                  ))
+              .toList(),
+        ),
+      ]),""", regex=True)
+patch(MSP, "if (!bind.isDisableAccount())", "if (false)", expected=2)
 if errors:
     print("\nBRANDING FAILED:", file=sys.stderr)
     for e in errors:
