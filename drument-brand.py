@@ -112,17 +112,17 @@ patch(
 )
 # ---------------------------------------------------------------- colors (match the Drument login page)
 COMMON = "flutter/lib/common.dart"
-patch(COMMON, "Color(0xFF0071FF)", "Color(0xFF2FB393)")   # accent
-patch(COMMON, "Color(0x770071FF)", "Color(0x772FB393)")   # accent50
-patch(COMMON, "Color(0xAA0071FF)", "Color(0xAA2FB393)")   # accent80
-patch(COMMON, "Color(0xFF2C8CFF)", "Color(0xFF2FB393)", expected=2)  # button colors
+patch(COMMON, "Color(0xFF0071FF)", "Color(0xFF2BB58F)")   # accent
+patch(COMMON, "Color(0x770071FF)", "Color(0x772BB58F)")   # accent50
+patch(COMMON, "Color(0xAA0071FF)", "Color(0xAA2BB58F)")   # accent80
+patch(COMMON, "Color(0xFF2C8CFF)", "Color(0xFF2BB58F)", expected=2)  # button colors
 patch(COMMON, r"primary: Colors\.blue,(\s*)secondary: accent", r"primary: accent,\1secondary: accent", expected=2, regex=True)
 # ---------------------------------------------------------------- design (dark navy look like the Drument site)
-patch(COMMON, "Color(0xFF18191E)", "Color(0xFF0B1220)", expected=2)   # window / dialog background
+patch(COMMON, "Color(0xFF18191E)", "Color(0xFF080E1C)", expected=2)   # window / dialog background
 patch(COMMON, "Color(0xFF24252B)", "Color(0xFF111A2B)", expected=5)   # cards, panels, input fields
-patch(COMMON, "Color(0xFF00B6F0)", "Color(0xFF2FB393)")               # ID color
-patch(COMMON, "BorderRadius.circular(8.0)", "BorderRadius.circular(14.0)", expected=5)
-patch(COMMON, "BorderRadius.circular(8)", "BorderRadius.circular(14)", expected=3)
+patch(COMMON, "Color(0xFF00B6F0)", "Color(0xFF2BB58F)")               # ID color
+patch(COMMON, "BorderRadius.circular(8.0)", "BorderRadius.circular(16.0)", expected=5)
+patch(COMMON, "BorderRadius.circular(8)", "BorderRadius.circular(16)", expected=3)
 # default theme = dark (still changeable in Settings -> General)
 patch(
     COMMON,
@@ -144,14 +144,14 @@ patch(
     """child: DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                          colors: [MyTheme.accent, const Color(0xFF978EFB)]),
-                      borderRadius: BorderRadius.circular(14.0),
+                          colors: [MyTheme.accent, const Color(0xFF9B8CFF)]),
+                      borderRadius: BorderRadius.circular(16.0),
                     ),
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.transparent,
                         shadowColor: Colors.transparent,
-                        foregroundColor: const Color(0xFF0B1220),
+                        foregroundColor: const Color(0xFF080E1C),
                       ),
                       onPressed: () {
                         onConnect();
@@ -178,7 +178,7 @@ patch(
     regex=True,
 )
 # ---- DruDesk full look: cards, menus, switches, toolbar
-CARD = "BoxDecoration(color: MyTheme.dcCard, borderRadius: BorderRadius.circular(14.0), border: Border.all(color: MyTheme.dcLine))"
+CARD = "BoxDecoration(color: MyTheme.dcCard, borderRadius: BorderRadius.circular(16.0), border: Border.all(color: MyTheme.dcLine))"
 HOME = "flutter/lib/desktop/pages/desktop_home_page.dart"
 # ID card
 patch(HOME, r"margin: const EdgeInsets\.only\(left: 20, right: 11\),(\s*)height: 57,",
@@ -191,8 +191,8 @@ patch(COMMON, r"popupMenuTheme: PopupMenuThemeData\(\s*shape: RoundedRectangleBo
       """popupMenuTheme: PopupMenuThemeData(
         color: const Color(0xFF111A2B),
         shape: RoundedRectangleBorder(
-      side: const BorderSide(color: Color(0xFF1F2D47)),
-      borderRadius: BorderRadius.all(Radius.circular(14.0)),
+      side: const BorderSide(color: Color(0xFF22304A)),
+      borderRadius: BorderRadius.all(Radius.circular(16.0)),
     )),""", regex=True)
 # switches: teal when on
 patch(COMMON, r"return SwitchThemeData\(\s*splashRadius: \(isDesktop \|\| isWebDesktop\) \? 0 : kRadialReactionRadius\);",
@@ -236,10 +236,10 @@ patch(CP, r"decoration: InputDecoration\(\s*filled: false,\s*counterText: '',",
                               filled: true,
                               fillColor: MyTheme.dcCard,
                               enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14.0),
+                                  borderRadius: BorderRadius.circular(16.0),
                                   borderSide: BorderSide(color: MyTheme.dcLine, width: 1.5)),
                               focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(14.0),
+                                  borderRadius: BorderRadius.circular(16.0),
                                   borderSide: BorderSide(color: MyTheme.accent, width: 1.5)),
                               counterText: '',""", regex=True)
 # ---- DruDesk tiles: ONE Settings tile + Recent/Favorites/... as square boxes under ID+password
@@ -291,14 +291,14 @@ TILES = """Widget buildTileGrid(BuildContext context) {
   Widget buildTile(BuildContext context, IconData icon, String label,
       bool selected, VoidCallback onTap) {
     return InkWell(
-      borderRadius: BorderRadius.circular(14.0),
+      borderRadius: BorderRadius.circular(16.0),
       onTap: onTap,
       child: Container(
         decoration: BoxDecoration(
           color: selected
               ? MyTheme.accent.withOpacity(0.18)
               : MyTheme.dcCard,
-          borderRadius: BorderRadius.circular(14.0),
+          borderRadius: BorderRadius.circular(16.0),
           border: Border.all(
               color: selected ? MyTheme.accent : MyTheme.dcLine,
               width: selected ? 1.5 : 1.0),
@@ -338,12 +338,12 @@ patch("flutter/lib/common/widgets/peer_tab_page.dart",
       "const Expanded(child: SizedBox()),", regex=True)
 
 # ---- accent color picker (saved, applies after restart)
-patch(COMMON, "static const Color accent = Color(0xFF2FB393);",
-"""static const Color accentDefault = Color(0xFF2FB393);
+patch(COMMON, "static const Color accent = Color(0xFF2BB58F);",
+"""static const Color accentDefault = Color(0xFF2BB58F);
   static const List<int> accentChoices = [
-    0xFF2FB393, 0xFFA5D86B, 0xFF978EFB, 0xFF5BA8F5, 0xFFF59E5B,
-    0xFFF26B8A, 0xFFF5D04C, 0xFF4FD1C5, 0xFFE5534B, 0xFF7ED957,
-    0xFFB084F5, 0xFF38BDF8, 0xFFFB7185, 0xFFFBBF24, 0xFF94A3B8,
+    0xFF2BB58F, 0xFF5B8DEF, 0xFF38B5D0, 0xFF9D7CF0, 0xFFEE6D9A,
+    0xFFF87171, 0xFFF09A47, 0xFF94A3B8, 0xFFA3D65C, 0xFF7DA2F5,
+    0xFFE879F9, 0xFFFB7185, 0xFFF0708F, 0xFFD6A06A, 0xFF8AA7E0,
   ];
   static Color loadAccent() {
     try {
@@ -362,20 +362,20 @@ patch(COMMON, "static const Color accent = Color(0xFF2FB393);",
   }
   static Color get dcCard => dcDark ? const Color(0xFF111A2B) : Colors.white;
   static Color get dcLine =>
-      dcDark ? const Color(0xFF1F2D47) : const Color(0xFFD5DFEA);
+      dcDark ? const Color(0xFF22304A) : const Color(0xFFDDE8E3);
   static Color get dcSeg =>
-      dcDark ? const Color(0xFF0A101C) : const Color(0xFFE4ECF3);
+      dcDark ? const Color(0xFF0B1424) : const Color(0xFFE3F4EE);
   static Color get dcStatus =>
       dcDark ? const Color(0xFF0F2A2A) : const Color(0xFFD9F1EA);
   static List<Color> get dcGradient => dcDark
-      ? const [Color(0xFF0B1220), Color(0xFF0E1D2B), Color(0xFF123232)]
-      : const [Color(0xFFF4F8FB), Color(0xFFE9F4F1), Color(0xFFDCF0E9)];""")
-patch(COMMON, "static const Color accent50 = Color(0x772FB393);", "static Color accent50 = accent.withOpacity(0.47);")
-patch(COMMON, "static const Color accent80 = Color(0xAA2FB393);", "static Color accent80 = accent.withOpacity(0.67);")
+      ? const [Color(0xFF080E1C), Color(0xFF0B1A2A), Color(0xFF0F2B33)]
+      : const [Color(0xFFF6FAF9), Color(0xFFEAF5F1), Color(0xFFE3EEF6)];""")
+patch(COMMON, "static const Color accent50 = Color(0x772BB58F);", "static Color accent50 = accent.withOpacity(0.47);")
+patch(COMMON, "static const Color accent80 = Color(0xAA2BB58F);", "static Color accent80 = accent.withOpacity(0.67);")
 patch(COMMON, r"style: const TextStyle\(\s*color: MyTheme\.accent\)", "style: const TextStyle(color: MyTheme.accentDefault)", regex=True)
-patch(COMMON, r"labelLarge: TextStyle\(fontSize: 16\.0, color: MyTheme\.accent80\)\)", "labelLarge: TextStyle(fontSize: 16.0, color: Color(0xAA2FB393)))", regex=True)
+patch(COMMON, r"labelLarge: TextStyle\(fontSize: 16\.0, color: MyTheme\.accent80\)\)", "labelLarge: TextStyle(fontSize: 16.0, color: Color(0xAA2BB58F)))", regex=True)
 patch(COMMON, r"color: accent80,(\s*)\),(\s*)\),(\s*)cardColor: Color\(0xFF111A2B\)",
-      r"color: Color(0xAA2FB393),\1),\2),\3cardColor: Color(0xFF111A2B)", regex=True)
+      r"color: Color(0xAA2BB58F),\1),\2),\3cardColor: Color(0xFF111A2B)", regex=True)
 patch("flutter/lib/desktop/pages/desktop_setting_page.dart", "const Color _accentColor = MyTheme.accent;", "const Color _accentColor = MyTheme.accentDefault;")
 patch("flutter/lib/desktop/widgets/remote_toolbar.dart", "static const Color hoverBlueColor = MyTheme.accent;", "static const Color hoverBlueColor = MyTheme.accentDefault;")
 patch("flutter/lib/desktop/widgets/popup_menu.dart", "static const Color commonColor = MyTheme.accent;", "static const Color commonColor = MyTheme.accentDefault;")
@@ -447,7 +447,7 @@ patch(AND + "src/main/kotlin/com/carriez/flutter_hbb/BootReceiver.kt", '"RustDes
 MCP = "flutter/lib/mobile/pages/connection_page.dart"
 MHP = "flutter/lib/mobile/pages/home_page.dart"
 patch(MCP, r"borderRadius: BorderRadius\.all\(Radius\.circular\(13\)\),",
-      "borderRadius: BorderRadius.all(Radius.circular(14)),\n            border: Border.all(color: MyTheme.dcLine),", regex=True)
+      "borderRadius: BorderRadius.all(Radius.circular(16)),\n            border: Border.all(color: MyTheme.dcLine),", regex=True)
 patch(MCP, "import 'home_page.dart';",
       "import 'home_page.dart';\nimport '../../models/peer_tab_model.dart';\nimport '../../models/ab_model.dart';")
 patch(MCP, r"_buildRemoteIDTextField\(\),(\s*)\]\)\),", r"_buildRemoteIDTextField(),\1_buildTileGrid(),\1])),", regex=True)
@@ -490,7 +490,7 @@ patch(MCP, "/// Callback for the connect button.", """Widget _buildTileGrid() {
                       gradient: selected
                           ? LinearGradient(colors: [
                               MyTheme.accent,
-                              const Color(0xFF978EFB)
+                              const Color(0xFF9B8CFF)
                             ])
                           : null,
                       borderRadius: BorderRadius.circular(12.0),
@@ -501,14 +501,14 @@ patch(MCP, "/// Callback for the connect button.", """Widget _buildTileGrid() {
                         Icon(PeerTabModel.icons[t],
                             size: 20,
                             color: selected
-                                ? const Color(0xFF0B1220)
+                                ? const Color(0xFF080E1C)
                                 : MyTheme.accent),
                         const SizedBox(height: 3),
                         Text(translate(PeerTabModel.tabNames[t]),
                             style: TextStyle(
                                 fontSize: 9,
                                 color: selected
-                                    ? const Color(0xFF0B1220)
+                                    ? const Color(0xFF080E1C)
                                     : null),
                             textAlign: TextAlign.center,
                             maxLines: 1,
@@ -530,18 +530,18 @@ patch(MCP, r"SizedBox\(\s*width: 60,\s*height: 60,\s*child: IconButton\(\s*icon:
       """Padding(
                 padding: const EdgeInsets.only(right: 10),
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(14.0),
+                  borderRadius: BorderRadius.circular(16.0),
                   onTap: onConnect,
                   child: Container(
                     width: 46,
                     height: 46,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                          colors: [MyTheme.accent, const Color(0xFF978EFB)]),
-                      borderRadius: BorderRadius.circular(14.0),
+                          colors: [MyTheme.accent, const Color(0xFF9B8CFF)]),
+                      borderRadius: BorderRadius.circular(16.0),
                     ),
                     child: const Icon(Icons.arrow_forward,
-                        color: Color(0xFF0B1220), size: 26),
+                        color: Color(0xFF080E1C), size: 26),
                   ),
                 ),
               ),""", regex=True)
@@ -590,7 +590,7 @@ patch(MHP, r"\}\),(\s*)\),(\s*)body: _pages\.elementAt", r"}),\1))),\2body: _pag
 # incoming-connection window (PC): card follows the theme color
 patch("flutter/lib/desktop/pages/server_page.dart",
       r"Color\(0xff00bfe1\),(\s*)Color\(0xff0071ff\),",
-      r"MyTheme.accent,\1const Color(0xFF978EFB),", regex=True)
+      r"MyTheme.accent,\1const Color(0xFF9B8CFF),", regex=True)
 patch("flutter/lib/desktop/pages/server_page.dart",
       r"borderRadius: BorderRadius\.circular\(10\.0\),(\s*)gradient: LinearGradient\(",
       r"borderRadius: BorderRadius.circular(16.0),\1gradient: LinearGradient(", regex=True)
