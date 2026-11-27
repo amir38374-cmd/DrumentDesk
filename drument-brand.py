@@ -137,44 +137,152 @@ patch(
     r"\1false",
     regex=True,
 )
-# Connect button: teal -> purple gradient pill (like the Drument login button)
+# Connect: full-width gradient button + square tiles (Transfer file, Camera, ...) like Drument
 patch(
     "flutter/lib/desktop/pages/connection_page.dart",
-    r"child: ElevatedButton\(\s*onPressed: \(\) \{\s*onConnect\(\);\s*\},\s*child: Text\(translate\(\"Connect\"\)\),\s*\),",
-    """child: DecoratedBox(
+    r"(?s)Padding\(\s*padding: const EdgeInsets\.only\(top: 13\.0\),\s*child: Row\(mainAxisAlignment: MainAxisAlignment\.end, children: \[.*?\]\),\s*\),\s*\],\s*\),\s*\),\s*\);\s*return Container\(\s*constraints: const BoxConstraints\(maxWidth: 600\)",
+    """Padding(
+              padding: const EdgeInsets.only(top: 14.0),
+              child: Column(children: [
+                InkWell(
+                  borderRadius: BorderRadius.circular(12.0),
+                  onTap: () {
+                    onConnect();
+                  },
+                  child: Container(
+                    height: 46,
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                          colors: [MyTheme.accent, const Color(0xFF9B8CFF)]),
-                      borderRadius: BorderRadius.circular(16.0),
+                          colors: [MyTheme.accent, MyTheme.dcG2]),
+                      borderRadius: BorderRadius.circular(12.0),
+                      boxShadow: [
+                        BoxShadow(
+                            color: MyTheme.dcG2.withOpacity(0.30),
+                            blurRadius: 22,
+                            offset: const Offset(0, 8)),
+                      ],
                     ),
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        foregroundColor: const Color(0xFF080E1C),
-                      ),
-                      onPressed: () {
-                        onConnect();
-                      },
-                      child: Text(translate("Connect")),
-                    ),
-                  ),""".replace("\\","\\\\"),
+                    child: Text(translate('Connect'),
+                        style: TextStyle(
+                            color: MyTheme.dcOnBrand,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16)),
+                  ),
+                ),
+                const SizedBox(height: 14),
+                Wrap(spacing: 10, runSpacing: 10, children: [
+                  _dcTile(Icons.folder_rounded, 'Transfer file',
+                      () => onConnect(isFileTransfer: true)),
+                  _dcTile(Icons.videocam_rounded, 'View camera',
+                      () => onConnect(isViewCamera: true)),
+                  _dcTile(Icons.terminal_rounded,
+                      '${translate('Terminal')} (beta)',
+                      () => onConnect(isTerminal: true)),
+                  if (isDesktop)
+                    _dcTile(Icons.swap_horiz_rounded, 'TCP tunneling',
+                        () => onConnect(isTcpTunneling: true)),
+                  _dcTile(Icons.verified_user_rounded, 'Request approval',
+                      () => _approvalMenu(context)),
+                ]),
+              ]),
+            ),
+          ],
+        ),
+      ),
+    );
+    return Container(
+        constraints: const BoxConstraints(maxWidth: 600)""",
     regex=True,
+)
+patch(
+    "flutter/lib/desktop/pages/connection_page.dart",
+    "  /// UI for the remote ID TextField.",
+    """  Offset _dcTapPos = Offset.zero;
+
+  Widget _dcTile(IconData icon, String label, VoidCallback onTap) {
+    return SizedBox(
+      width: 112,
+      height: 104,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16.0),
+        onTapDown: (e) => _dcTapPos = e.globalPosition,
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: MyTheme.dcCard,
+            borderRadius: BorderRadius.circular(16.0),
+            border: Border.all(color: MyTheme.dcLine),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(icon, color: MyTheme.accent, size: 28),
+              const SizedBox(height: 8),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Text(label,
+                    style: const TextStyle(
+                        fontSize: 12, fontWeight: FontWeight.w700),
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _approvalMenu(BuildContext context) async {
+    MenuEntryButton<String> a(String title,
+            {bool isFileTransfer = false,
+            bool isViewCamera = false,
+            bool isTerminal = false,
+            bool isTcpTunneling = false}) =>
+        MenuEntryButton<String>(
+          childBuilder: (style) => Text(translate(title), style: style),
+          proc: () => connect(context, _idController.id,
+              loginMethod: 'request-approval',
+              isFileTransfer: isFileTransfer,
+              isViewCamera: isViewCamera,
+              isTerminal: isTerminal,
+              isTcpTunneling: isTcpTunneling),
+          padding: EdgeInsets.symmetric(horizontal: kDesktopMenuPadding.left),
+          dismissOnClicked: true,
+        );
+    final x = _dcTapPos.dx;
+    final y = _dcTapPos.dy;
+    await mod_menu.showMenu(
+      context: context,
+      position: RelativeRect.fromLTRB(x, y, x, y),
+      items: <MenuEntryBase<String>>[
+        a('Connect'),
+        a('Transfer file', isFileTransfer: true),
+        a('View camera', isViewCamera: true),
+        a('${translate('Terminal')} (beta)', isTerminal: true),
+        if (isDesktop) a('TCP tunneling', isTcpTunneling: true),
+      ]
+          .map((e) => e.build(
+              context,
+              const MenuConfig(
+                  commonColor: CustomPopupMenuTheme.commonColor,
+                  height: CustomPopupMenuTheme.height,
+                  dividerHeight: CustomPopupMenuTheme.dividerHeight)))
+          .expand((i) => i)
+          .toList(),
+      elevation: 8,
+    );
+  }
+
+  /// UI for the remote ID TextField.""",
 )
 # Special look: soft navy -> teal glow behind the connect page
 patch(
     "flutter/lib/desktop/pages/desktop_home_page.dart",
     r"return Container\(\s*color: Theme\.of\(context\)\.scaffoldBackgroundColor,\s*child: ConnectionPage\(\),\s*\);",
-    """return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: MyTheme.dcGradient,
-        ),
-      ),
-      child: ConnectionPage(),
-    );""".replace("\\","\\\\"),
+    """return MyTheme.dcBackdrop(ConnectionPage());""",
     regex=True,
 )
 # ---- DruDesk full look: cards, menus, switches, toolbar
@@ -369,7 +477,35 @@ patch(COMMON, "static const Color accent = Color(0xFF2BB58F);",
       dcDark ? const Color(0xFF0F2A2A) : const Color(0xFFD9F1EA);
   static List<Color> get dcGradient => dcDark
       ? const [Color(0xFF080E1C), Color(0xFF0B1A2A), Color(0xFF0F2B33)]
-      : const [Color(0xFFF6FAF9), Color(0xFFEAF5F1), Color(0xFFE3EEF6)];""")
+      : const [Color(0xFFF6FAF9), Color(0xFFEAF5F1), Color(0xFFE3EEF6)];
+  static Color get dcG2 =>
+      dcDark ? const Color(0xFF9B8CFF) : const Color(0xFF6D5CE0);
+  static Color get dcOnBrand =>
+      dcDark ? const Color(0xFF06231A) : Colors.white;
+  static Widget dcBackdrop(Widget child) => Container(
+        color: dcDark ? const Color(0xFF080E1C) : const Color(0xFFF6FAF9),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: const Alignment(0.9, -1.0),
+              radius: 1.1,
+              colors: [accent.withOpacity(0.26), Colors.transparent],
+              stops: const [0.0, 0.7],
+            ),
+          ),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: RadialGradient(
+                center: const Alignment(-1.0, 1.0),
+                radius: 1.1,
+                colors: [dcG2.withOpacity(0.24), Colors.transparent],
+                stops: const [0.0, 0.7],
+              ),
+            ),
+            child: child,
+          ),
+        ),
+      );""")
 patch(COMMON, "static const Color accent50 = Color(0x772BB58F);", "static Color accent50 = accent.withOpacity(0.47);")
 patch(COMMON, "static const Color accent80 = Color(0xAA2BB58F);", "static Color accent80 = accent.withOpacity(0.67);")
 patch(COMMON, r"style: const TextStyle\(\s*color: MyTheme\.accent\)", "style: const TextStyle(color: MyTheme.accentDefault)", regex=True)
@@ -490,7 +626,7 @@ patch(MCP, "/// Callback for the connect button.", """Widget _buildTileGrid() {
                       gradient: selected
                           ? LinearGradient(colors: [
                               MyTheme.accent,
-                              const Color(0xFF9B8CFF)
+                              MyTheme.dcG2
                             ])
                           : null,
                       borderRadius: BorderRadius.circular(12.0),
@@ -537,7 +673,7 @@ patch(MCP, r"SizedBox\(\s*width: 60,\s*height: 60,\s*child: IconButton\(\s*icon:
                     height: 46,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
-                          colors: [MyTheme.accent, const Color(0xFF9B8CFF)]),
+                          colors: [MyTheme.accent, MyTheme.dcG2]),
                       borderRadius: BorderRadius.circular(16.0),
                     ),
                     child: const Icon(Icons.arrow_forward,
@@ -560,15 +696,7 @@ patch(MHP, "type: BottomNavigationBarType.fixed,", "type: BottomNavigationBarTyp
 patch(MHP, r"centerTitle: true,(\s*)title: appTitle\(\),", r"centerTitle: true,\1backgroundColor: Colors.transparent,\1elevation: 0,\1title: appTitle(),", regex=True)
 
 patch(MHP, r"child: Scaffold\(\s*// backgroundColor: MyTheme\.grayBg,\s*appBar: AppBar\(",
-      """child: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: MyTheme.dcGradient,
-            ),
-          ),
-          child: Scaffold(
+      """child: MyTheme.dcBackdrop(Scaffold(
           backgroundColor: Colors.transparent,
           appBar: AppBar(""", regex=True)
 patch(MHP, r"body: _pages\.elementAt\(_selectedIndex\),(\s*)\)\);", r"body: _pages.elementAt(_selectedIndex),\1)));", regex=True)
@@ -590,7 +718,7 @@ patch(MHP, r"\}\),(\s*)\),(\s*)body: _pages\.elementAt", r"}),\1))),\2body: _pag
 # incoming-connection window (PC): card follows the theme color
 patch("flutter/lib/desktop/pages/server_page.dart",
       r"Color\(0xff00bfe1\),(\s*)Color\(0xff0071ff\),",
-      r"MyTheme.accent,\1const Color(0xFF9B8CFF),", regex=True)
+      r"MyTheme.accent,\1MyTheme.dcG2,", regex=True)
 patch("flutter/lib/desktop/pages/server_page.dart",
       r"borderRadius: BorderRadius\.circular\(10\.0\),(\s*)gradient: LinearGradient\(",
       r"borderRadius: BorderRadius.circular(16.0),\1gradient: LinearGradient(", regex=True)
