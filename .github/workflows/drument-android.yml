@@ -1,6 +1,6 @@
 name: DruDesk Android Build
 
-# Builds the DruDesk Android APK (arm64 + armv7).
+# Builds the DruDesk Android APK (arm64).
 # Run it from the Actions tab: DruDesk Android Build -> Run workflow.
 
 on:
@@ -73,13 +73,6 @@ jobs:
           - {
               arch: aarch64,
               target: aarch64-linux-android,
-              os: ubuntu-24.04,
-              reltype: release,
-              suffix: "",
-            }
-          - {
-              arch: armv7,
-              target: armv7-linux-androideabi,
               os: ubuntu-24.04,
               reltype: release,
               suffix: "",
@@ -269,6 +262,19 @@ jobs:
         with:
           name: librustdesk.so.${{ matrix.job.target }}
           path: ./target/${{ matrix.job.target }}/release/liblibrustdesk.so
+
+      - name: Use fixed signing key (so updates install over the old app)
+        shell: bash
+        env:
+          KS: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$KS" ]; then
+            mkdir -p ~/.android
+            echo "$KS" | base64 -d > ~/.android/debug.keystore
+            echo "fixed key installed"
+          else
+            echo "no ANDROID_KEYSTORE_B64 secret: using a random key"
+          fi
 
       - name: Build rustdesk
         shell: bash
